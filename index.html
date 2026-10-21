@@ -65,15 +65,15 @@
                     <h1 class="text-lg font-extrabold leading-tight flex items-center gap-2">
                         EntregaTutoresAtividadeTrilha3
                         <span id="live-indicator" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Sincronizado (Apps Script)
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Ao Vivo
                         </span>
                     </h1>
-                    <p class="text-xs text-slate-400">Espelhamento instantâneo via Google Apps Script (70 Tutores)</p>
+                    <p class="text-xs text-slate-400">Espelhamento automático em tempo real (70 Tutores)</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2.5">
-                <button onclick="fetchSheetData()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-md">
+                <button onclick="fetchSheetData(true)" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-md">
                     <i id="sync-icon" class="fa-solid fa-rotate"></i> Atualizar Agora
                 </button>
             </div>
@@ -91,7 +91,7 @@
                 </div>
                 <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
                     <i class="fa-solid fa-signal text-emerald-500" id="status-signal-icon"></i>
-                    <span>Status: <strong id="source-status" class="text-slate-800">Apps Script API (Instantâneo)</strong></span>
+                    <span>Status: <strong id="source-status" class="text-slate-800">Sincronização Automática (3s)</strong></span>
                 </div>
             </div>
 
@@ -214,7 +214,7 @@
 
     </main>
 
-    <!-- Script de Sincronização via JSON API -->
+    <!-- Script de Sincronização Oculta a cada 3 Segundos -->
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycbyBWFqjo6EttvRym-jtEU0MbuTrYjmMoJYFH0O2bgk_KqsVZizk5A9c7Jm0ogbHo96F/exec";
 
@@ -229,13 +229,12 @@
             return ['VERDADEIRO', 'TRUE', 'SIM', '1', 'OK', 'V', '✓'].includes(normalized);
         }
 
-        async function fetchSheetData() {
+        async function fetchSheetData(showSpinner = false) {
             const syncIcon = document.getElementById('sync-icon');
             const statusSignal = document.getElementById('status-signal-icon');
-            syncIcon.classList.add('fa-spin');
+            if (showSpinner) syncIcon.classList.add('fa-spin');
 
             try {
-                // Adiciona timestamp para evitar cache do navegador e puxar a alteração imediata
                 const targetUrl = `${apiUrl}?_t=${new Date().getTime()}`;
                 const response = await fetch(targetUrl, { cache: 'no-store' });
                 
@@ -244,7 +243,7 @@
                 const data = await response.json();
                 parseJSONData(data);
 
-                document.getElementById('source-status').innerText = 'Apps Script API (Instantâneo)';
+                document.getElementById('source-status').innerText = 'Sincronização Automática (3s)';
                 statusSignal.className = 'fa-solid fa-signal text-emerald-500';
                 document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
             } catch (err) {
@@ -252,7 +251,9 @@
                 document.getElementById('source-status').innerText = 'Erro na Conexão';
                 statusSignal.className = 'fa-solid fa-circle-exclamation text-rose-500';
             } finally {
-                setTimeout(() => syncIcon.classList.remove('fa-spin'), 400);
+                if (showSpinner) {
+                    setTimeout(() => syncIcon.classList.remove('fa-spin'), 400);
+                }
             }
         }
 
@@ -267,7 +268,6 @@
                 const name = String(row.name).trim();
                 let date = row.diaEntrega ? String(row.diaEntrega).trim() : '';
                 
-                // Trata as 5 respostas vindas do Apps Script
                 const rawResp = row.responses || [];
                 const responses = [
                     parseBoolean(rawResp[0]),
@@ -281,8 +281,7 @@
                     id: index + 1,
                     name: name,
                     date: date,
-                    responses: responses,
-                    entregaCompletaSheet: row.entregaCompleta // Opcional, o código abaixo também recalcula automaticamente se necessário
+                    responses: responses
                 });
             });
 
@@ -443,9 +442,12 @@
             renderData();
         }
 
-        // Carrega os dados ao abrir a página (sem auto-atualização contínua de segundos)
+        // Inicializa e configura a verificação oculta a cada 3 segundos
         window.onload = function() {
-            fetchSheetData();
+            fetchSheetData(true); // Carrega na abertura com indicador
+            setInterval(() => {
+                fetchSheetData(false); // Executa em segundo plano de forma oculta e sem travamentos
+            }, 3000);
         };
     </script>
 </body>
