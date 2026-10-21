@@ -10,8 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- PapaParse para conversão robusta de CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -37,14 +35,6 @@
             background-color: #f87171 !important;
             color: #7f1d1d;
         }
-        .pulse-badge {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
         @media print {
             .no-print {
                 display: none !important;
@@ -75,10 +65,10 @@
                     <h1 class="text-lg font-extrabold leading-tight flex items-center gap-2">
                         EntregaTutoresAtividadeTrilha3
                         <span id="live-indicator" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-badge"></span> Sincronizado
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Sincronizado (Apps Script)
                         </span>
                     </h1>
-                    <p class="text-xs text-slate-400">Espelhamento automático e em tempo real via Google Sheets (70 Tutores)</p>
+                    <p class="text-xs text-slate-400">Espelhamento instantâneo via Google Apps Script (70 Tutores)</p>
                 </div>
             </div>
             
@@ -101,21 +91,11 @@
                 </div>
                 <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
                     <i class="fa-solid fa-signal text-emerald-500" id="status-signal-icon"></i>
-                    <span>Status: <strong id="source-status" class="text-slate-800">Google Sheets (Ao Vivo)</strong></span>
+                    <span>Status: <strong id="source-status" class="text-slate-800">Apps Script API (Instantâneo)</strong></span>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2">
-                    <label for="auto-refresh-select" class="font-semibold text-slate-700">Auto-Atualização:</label>
-                    <select id="auto-refresh-select" onchange="changeAutoRefreshInterval()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="0">Desativado</option>
-                        <option value="5" selected>A cada 5 segundos</option>
-                        <option value="10">A cada 10 segundos</option>
-                        <option value="30">A cada 30 segundos</option>
-                        <option value="60">A cada 1 minuto</option>
-                    </select>
-                </div>
                 <button onclick="window.print()" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Imprimir Relatório">
                     <i class="fa-solid fa-print text-sm"></i>
                 </button>
@@ -234,20 +214,18 @@
 
     </main>
 
-    <!-- Script de Sincronização Direta e Alinhada -->
+    <!-- Script de Sincronização via JSON API -->
     <script>
-        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA4BPu8YqYsBwYR6ya2cI1vm2wK85Wyn77qM2savesdv8y9U_B6CQR6Z0sCjaWd7zMnwMan5W1UGT8/pub?gid=0&single=true&output=csv";
+        const apiUrl = "https://script.google.com/macros/s/AKfycbyBWFqjo6EttvRym-jtEU0MbuTrYjmMoJYFH0O2bgk_KqsVZizk5A9c7Jm0ogbHo96F/exec";
 
         let tutors = [];
         let currentFilter = 'all';
         let viewMode = 'table';
-        let autoRefreshTimer = null;
 
         function parseBoolean(val) {
             if (typeof val === 'boolean') return val;
             if (!val) return false;
             const normalized = String(val).trim().toUpperCase();
-            // Identifica apenas termos positivos verdadeiros (Sim, TRUE, Verdadero, V, ✓, 1, OK)
             return ['VERDADEIRO', 'TRUE', 'SIM', '1', 'OK', 'V', '✓'].includes(normalized);
         }
 
@@ -257,27 +235,18 @@
             syncIcon.classList.add('fa-spin');
 
             try {
-                // Força limpeza total de cache do navegador e do Google Sheets para atualizar instantaneamente
-                const cleanUrl = sheetUrl.split('&_t=')[0];
-                const targetUrl = `${cleanUrl}&_t=${new Date().getTime()}`;
-
+                // Adiciona timestamp para evitar cache do navegador e puxar a alteração imediata
+                const targetUrl = `${apiUrl}?_t=${new Date().getTime()}`;
                 const response = await fetch(targetUrl, { cache: 'no-store' });
                 
-                if (!response.ok) throw new Error('Falha ao conectar à planilha');
+                if (!response.ok) throw new Error('Falha ao conectar à API');
 
-                const csvText = await response.text();
+                const data = await response.json();
+                parseJSONData(data);
 
-                Papa.parse(csvText, {
-                    header: false,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        parseCSVRows(results.data);
-                        document.getElementById('live-indicator').classList.remove('hidden');
-                        document.getElementById('source-status').innerText = 'Google Sheets (Ao Vivo)';
-                        statusSignal.className = 'fa-solid fa-signal text-emerald-500';
-                        document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
-                    }
-                });
+                document.getElementById('source-status').innerText = 'Apps Script API (Instantâneo)';
+                statusSignal.className = 'fa-solid fa-signal text-emerald-500';
+                document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
             } catch (err) {
                 console.error('Erro de sincronização:', err);
                 document.getElementById('source-status').innerText = 'Erro na Conexão';
@@ -287,34 +256,35 @@
             }
         }
 
-        function parseCSVRows(rows) {
-            if (!rows || rows.length < 2) return;
+        function parseJSONData(rows) {
+            if (!rows || rows.length === 0) return;
 
             const parsedTutors = [];
             
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row[0]) continue; 
+            rows.forEach((row, index) => {
+                if (!row.name) return;
 
-                const name = String(row[0]).trim();
-                let date = row[2] ? String(row[2]).trim() : '';
+                const name = String(row.name).trim();
+                let date = row.diaEntrega ? String(row.diaEntrega).trim() : '';
                 
-                // Mapeamento correto e rigoroso de colunas (D, E, F, G, H correspondem aos índices 3, 4, 5, 6, 7)
+                // Trata as 5 respostas vindas do Apps Script
+                const rawResp = row.responses || [];
                 const responses = [
-                    parseBoolean(row[3]), // Resposta 1 (Coluna D)
-                    parseBoolean(row[4]), // Resposta 2 (Coluna E)
-                    parseBoolean(row[5]), // Resposta 3 (Coluna F)
-                    parseBoolean(row[6]), // Resposta 4 (Coluna G)
-                    parseBoolean(row[7])  // Resposta 5 (Coluna H)
+                    parseBoolean(rawResp[0]),
+                    parseBoolean(rawResp[1]),
+                    parseBoolean(rawResp[2]),
+                    parseBoolean(rawResp[3]),
+                    parseBoolean(rawResp[4])
                 ];
 
                 parsedTutors.push({
-                    id: i,
+                    id: index + 1,
                     name: name,
                     date: date,
-                    responses: responses
+                    responses: responses,
+                    entregaCompletaSheet: row.entregaCompleta // Opcional, o código abaixo também recalcula automaticamente se necessário
                 });
-            }
+            });
 
             if (parsedTutors.length > 0) {
                 tutors = parsedTutors;
@@ -473,20 +443,9 @@
             renderData();
         }
 
-        function changeAutoRefreshInterval() {
-            const seconds = parseInt(document.getElementById('auto-refresh-select').value);
-            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-
-            if (seconds > 0) {
-                autoRefreshTimer = setInterval(() => {
-                    fetchSheetData();
-                }, seconds * 1000);
-            }
-        }
-
+        // Carrega os dados ao abrir a página (sem auto-atualização contínua de segundos)
         window.onload = function() {
             fetchSheetData();
-            changeAutoRefreshInterval();
         };
     </script>
 </body>
