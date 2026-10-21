@@ -73,8 +73,9 @@
             </div>
             
             <div class="flex items-center gap-2.5">
-                <button onclick="fetchSheetData(true)" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-md">
-                    <i id="sync-icon" class="fa-solid fa-rotate"></i> Atualizar Agora
+                <!-- Botão de Impressão movido para o lugar do Atualizar Agora -->
+                <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white text-xs font-semibold rounded-lg transition shadow-md">
+                    <i class="fa-solid fa-print"></i> Imprimir Relatório
                 </button>
             </div>
         </div>
@@ -82,24 +83,10 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full print-full-width">
         
-        <!-- Barra de Status -->
-        <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 text-xs text-slate-600 gap-4 no-print">
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
-                    <i class="fa-regular fa-clock text-slate-500"></i>
-                    <span>Última Sincronização: <strong id="last-update-time" class="text-slate-800">Carregando...</strong></span>
-                </div>
-                <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
-                    <i class="fa-solid fa-signal text-emerald-500" id="status-signal-icon"></i>
-                    <span>Status: <strong id="source-status" class="text-slate-800">Sincronização Automática (3s)</strong></span>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <button onclick="window.print()" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Imprimir Relatório">
-                    <i class="fa-solid fa-print text-sm"></i>
-                </button>
-            </div>
+        <!-- Barra de Status Oculta Conforme Solicitado -->
+        <div class="hidden">
+            <span id="last-update-time"></span>
+            <span id="source-status"></span>
         </div>
 
         <!-- Dashboard de Métricas -->
@@ -214,7 +201,7 @@
 
     </main>
 
-    <!-- Script com formatação de data DD/MM/AAAA -->
+    <!-- Script de Sincronização Automática (3s) e Tratamento de Dados -->
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycbyBWFqjo6EttvRym-jtEU0MbuTrYjmMoJYFH0O2bgk_KqsVZizk5A9c7Jm0ogbHo96F/exec";
 
@@ -229,40 +216,30 @@
             return ['VERDADEIRO', 'TRUE', 'SIM', '1', 'OK', 'V', '✓'].includes(normalized);
         }
 
-        // Função inteligente para formatar qualquer data para DD/MM/AAAA
         function formatDate(dateVal) {
             if (!dateVal) return '-';
-            
-            // Se já vier formatada ou for texto simples
             const strVal = String(dateVal).trim();
             if (strVal === '' || strVal === '-') return '-';
 
-            // Tenta converter se vier no formato ISO do Google (ex: 2026-10-21T00:00:00.000Z)
             const d = new Date(strVal);
             if (!isNaN(d.getTime())) {
                 const day = String(d.getUTCDate()).padStart(2, '0');
-                const month = String(d.getUTCDate() + 1 ? d.getUTCMonth() + 1 : 1).padStart(2, '0'); // Mês correto
+                const month = String(d.getUTCMonth() + 1).padStart(2, '0');
                 const year = d.getUTCFullYear();
-                // Validação simples para evitar datas inválidas de sistema
                 if (year > 2000) {
                     return `${day}/${month}/${year}`;
                 }
             }
 
-            // Se for formato AAAA-MM-DD direto
             if (/^\d{4}-\d{2}-\d{2}$/.test(strVal)) {
                 const parts = strVal.split('-');
                 return `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
 
-            return strVal; // Retorna o texto original caso já esteja customizado
+            return strVal;
         }
 
-        async function fetchSheetData(showSpinner = false) {
-            const syncIcon = document.getElementById('sync-icon');
-            const statusSignal = document.getElementById('status-signal-icon');
-            if (showSpinner) syncIcon.classList.add('fa-spin');
-
+        async function fetchSheetData() {
             try {
                 const targetUrl = `${apiUrl}?_t=${new Date().getTime()}`;
                 const response = await fetch(targetUrl, { cache: 'no-store' });
@@ -271,18 +248,8 @@
 
                 const data = await response.json();
                 parseJSONData(data);
-
-                document.getElementById('source-status').innerText = 'Sincronização Automática (3s)';
-                statusSignal.className = 'fa-solid fa-signal text-emerald-500';
-                document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
             } catch (err) {
                 console.error('Erro de sincronização:', err);
-                document.getElementById('source-status').innerText = 'Erro na Conexão';
-                statusSignal.className = 'fa-solid fa-circle-exclamation text-rose-500';
-            } finally {
-                if (showSpinner) {
-                    setTimeout(() => syncIcon.classList.remove('fa-spin'), 400);
-                }
             }
         }
 
@@ -295,7 +262,7 @@
                 if (!row.name) return;
 
                 const name = String(row.name).trim();
-                let date = formatDate(row.diaEntrega); // Aplica a formatação DD/MM/AAAA
+                let date = formatDate(row.diaEntrega);
                 
                 const rawResp = row.responses || [];
                 const responses = [
@@ -471,11 +438,11 @@
             renderData();
         }
 
-        // Inicializa e mantém a verificação oculta a cada 3 segundos
+        // Inicializa e mantém a verificação oculta a cada 3 segundos em segundo plano
         window.onload = function() {
-            fetchSheetData(true);
+            fetchSheetData();
             setInterval(() => {
-                fetchSheetData(false);
+                fetchSheetData();
             }, 3000);
         };
     </script>
