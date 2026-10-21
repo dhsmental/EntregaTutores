@@ -234,7 +234,7 @@
 
     </main>
 
-    <!-- Script de Sincronização Direta -->
+    <!-- Script de Sincronização Direta e Alinhada -->
     <script>
         const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA4BPu8YqYsBwYR6ya2cI1vm2wK85Wyn77qM2savesdv8y9U_B6CQR6Z0sCjaWd7zMnwMan5W1UGT8/pub?gid=0&single=true&output=csv";
 
@@ -247,7 +247,8 @@
             if (typeof val === 'boolean') return val;
             if (!val) return false;
             const normalized = String(val).trim().toUpperCase();
-            return ['VERDADEIRO', 'TRUE', 'SIM', '1', 'OK', 'V', '✓', 'X'].includes(normalized);
+            // Identifica apenas termos positivos verdadeiros (Sim, TRUE, Verdadero, V, ✓, 1, OK)
+            return ['VERDADEIRO', 'TRUE', 'SIM', '1', 'OK', 'V', '✓'].includes(normalized);
         }
 
         async function fetchSheetData() {
@@ -256,7 +257,7 @@
             syncIcon.classList.add('fa-spin');
 
             try {
-                // Adiciona parâmetro anti-cache dinâmico para garantir que o HTML receba a alteração da planilha imediatamente
+                // Força limpeza total de cache do navegador e do Google Sheets para atualizar instantaneamente
                 const cleanUrl = sheetUrl.split('&_t=')[0];
                 const targetUrl = `${cleanUrl}&_t=${new Date().getTime()}`;
 
@@ -298,12 +299,13 @@
                 const name = String(row[0]).trim();
                 let date = row[2] ? String(row[2]).trim() : '';
                 
+                // Mapeamento correto e rigoroso de colunas (D, E, F, G, H correspondem aos índices 3, 4, 5, 6, 7)
                 const responses = [
-                    parseBoolean(row[3]),
-                    parseBoolean(row[4]),
-                    parseBoolean(row[5]),
-                    parseBoolean(row[6]),
-                    parseBoolean(row[7])
+                    parseBoolean(row[3]), // Resposta 1 (Coluna D)
+                    parseBoolean(row[4]), // Resposta 2 (Coluna E)
+                    parseBoolean(row[5]), // Resposta 3 (Coluna F)
+                    parseBoolean(row[6]), // Resposta 4 (Coluna G)
+                    parseBoolean(row[7])  // Resposta 5 (Coluna H)
                 ];
 
                 parsedTutors.push({
