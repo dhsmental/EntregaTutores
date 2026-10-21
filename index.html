@@ -36,11 +36,11 @@
             color: #7f1d1d;
         }
 
-        /* Configuração estrita para imprimir em 1 página A4 Retrato */
+        /* Configuração de Impressão: Dividido em 2 páginas (35 tutores por página) */
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 5mm;
+                margin: 10mm;
             }
             .no-print {
                 display: none !important;
@@ -48,8 +48,6 @@
             body {
                 background: white !important;
                 color: black !important;
-                font-size: 10px !important;
-                zoom: 85%; /* Ajusta a escala global para caber tudo na folha */
             }
             .print-full-width {
                 max-width: 100% !important;
@@ -57,11 +55,15 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            table {
-                font-size: 9px !important;
+            #table-view-container {
+                max-height: none !important;
+                border: none !important;
+                box-shadow: none !important;
             }
-            th, td {
-                padding: 4px 6px !important;
+            /* Insere quebra de página exata após a linha 35 */
+            tr:nth-child(35) {
+                page-break-after: always !important;
+                break-after: page !important;
             }
         }
     </style>
@@ -103,7 +105,7 @@
         </div>
 
         <!-- Dashboard de Métricas -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 no-print">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
                     <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total de Tutores</p>
