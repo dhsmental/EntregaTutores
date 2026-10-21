@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrega Tutores - Atividade Trilha 3</title>
-    <!-- Tailwind CSS para estilização moderna e responsiva -->
+    <title>Espelhamento em Tempo Real - Entrega dos Tutores</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome para ícones -->
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Fonte Inter do Google -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- PapaParse para conversão robusta de CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -18,229 +21,306 @@
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#075985',
-                            800: '#0f172a',
-                        }
+                        sheetHeader: '#0e435d',
                     }
                 }
             }
         }
     </script>
+    
     <style>
-        /* Estilos personalizados para os estados de célula estilo Google Sheets */
         .cell-checked {
-            background-color: #d1fae5 !important; /* Verde claro */
-            transition: all 0.2s ease;
+            background-color: #d1fae5 !important;
+            color: #065f46;
         }
         .cell-unchecked {
-            background-color: #fecdd3 !important; /* Vermelho claro */
-            transition: all 0.2s ease;
+            background-color: #f87171 !important;
+            color: #7f1d1d;
         }
-        .checkbox-custom {
-            width: 1.25rem;
-            height: 1.25rem;
-            cursor: pointer;
-            accent-color: #059669;
+        .pulse-badge {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .print-full-width {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
 
     <!-- Top Navigation Bar -->
-    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <div class="bg-emerald-500 text-white p-2 rounded-lg font-bold text-lg">
-                    <i class="fa-solid fa-file-circle-check"></i>
+                <div class="bg-emerald-500 text-white p-2.5 rounded-xl font-bold text-lg shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-table text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold leading-tight">EntregaTutoresAtividadeTrilha3</h1>
-                    <p class="text-xs text-slate-400">Painel Interativo de Acompanhamento</p>
+                    <h1 class="text-lg font-extrabold leading-tight flex items-center gap-2">
+                        EntregaTutoresAtividadeTrilha3
+                        <span id="live-indicator" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-badge"></span> Sincronizado
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Espelhamento automático e em tempo real via Google Sheets (70 Tutores)</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-2">
-                <button onclick="exportToCSV()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md border border-slate-700 transition">
-                    <i class="fa-solid fa-download"></i> Exportar CSV
-                </button>
-                <button onclick="window.print()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md border border-slate-700 transition">
-                    <i class="fa-solid fa-print"></i> Imprimir
-                </button>
-                <button onclick="openAddModal()" class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-md transition shadow">
-                    <i class="fa-solid fa-user-plus"></i> Novo Tutor
+            <div class="flex items-center gap-2.5">
+                <button onclick="fetchSheetData()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-md">
+                    <i id="sync-icon" class="fa-solid fa-rotate"></i> Atualizar Agora
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full print-full-width">
         
-        <!-- Cards de Estatísticas / Métricas -->
+        <!-- Barra de Status -->
+        <div class="flex flex-wrap justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 text-xs text-slate-600 gap-4 no-print">
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
+                    <i class="fa-regular fa-clock text-slate-500"></i>
+                    <span>Última Sincronização: <strong id="last-update-time" class="text-slate-800">Carregando...</strong></span>
+                </div>
+                <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg">
+                    <i class="fa-solid fa-signal text-emerald-500" id="status-signal-icon"></i>
+                    <span>Status: <strong id="source-status" class="text-slate-800">Google Sheets (Ao Vivo)</strong></span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <label for="auto-refresh-select" class="font-semibold text-slate-700">Auto-Atualização:</label>
+                    <select id="auto-refresh-select" onchange="changeAutoRefreshInterval()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="0">Desativado</option>
+                        <option value="5" selected>A cada 5 segundos</option>
+                        <option value="10">A cada 10 segundos</option>
+                        <option value="30">A cada 30 segundos</option>
+                        <option value="60">A cada 1 minuto</option>
+                    </select>
+                </div>
+                <button onclick="window.print()" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition" title="Imprimir Relatório">
+                    <i class="fa-solid fa-print text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard de Métricas -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total de Tutores</p>
-                    <h2 id="stat-total" class="text-2xl font-bold text-slate-800 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total de Tutores</p>
+                    <h2 id="stat-total" class="text-2xl font-black text-slate-800 mt-1">0</h2>
                 </div>
-                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
                     <i class="fa-solid fa-users text-xl"></i>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Entregas Concluídas</p>
-                    <h2 id="stat-completed" class="text-2xl font-bold text-emerald-600 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Entregas Concluídas (Sim)</p>
+                    <h2 id="stat-completed" class="text-2xl font-black text-emerald-600 mt-1">0</h2>
                 </div>
-                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                     <i class="fa-solid fa-circle-check text-xl"></i>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pendentes</p>
-                    <h2 id="stat-pending" class="text-2xl font-bold text-rose-600 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pendentes (Não)</p>
+                    <h2 id="stat-pending" class="text-2xl font-black text-rose-600 mt-1">0</h2>
                 </div>
-                <div class="p-3 bg-rose-50 text-rose-600 rounded-lg">
+                <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
                     <i class="fa-solid fa-circle-xmark text-xl"></i>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col justify-center">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Progresso Geral</span>
-                    <span id="stat-percent" class="text-sm font-bold text-slate-700">0%</span>
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxa de Conclusão</span>
+                    <span id="stat-percent" class="text-sm font-extrabold text-slate-800">0%</span>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div id="progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200">
+                    <div id="progress-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Barra de Busca e Filtros -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-            <!-- Pesquisa -->
+        <!-- Filtros e Busca -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center no-print">
             <div class="relative w-full md:w-80">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
-                <input type="text" id="search-input" onkeyup="filterData()" placeholder="Buscar por nome do tutor..." 
-                       class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="search-input" onkeyup="renderData()" placeholder="Buscar tutor pelo nome..." 
+                       class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
             </div>
 
-            <!-- Filtros Rápidos -->
-            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                <span class="text-xs font-medium text-slate-500 whitespace-nowrap mr-1">Filtrar por:</span>
-                <button onclick="setFilter('all')" id="btn-filter-all" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-white transition">
-                    Todos
-                </button>
-                <button onclick="setFilter('completed')" id="btn-filter-completed" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-                    Apenas Entregues (Sim)
-                </button>
-                <button onclick="setFilter('pending')" id="btn-filter-pending" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-                    Pendentes (Não)
-                </button>
+            <div class="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <span class="text-xs font-semibold text-slate-500 px-2">Filtrar:</span>
+                    <button onclick="setFilter('all')" id="btn-filter-all" class="filter-btn px-3 py-1 rounded-md text-xs font-bold bg-slate-900 text-white shadow-sm transition">
+                        Todos
+                    </button>
+                    <button onclick="setFilter('completed')" id="btn-filter-completed" class="filter-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
+                        Entregues (Sim)
+                    </button>
+                    <button onclick="setFilter('pending')" id="btn-filter-pending" class="filter-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
+                        Pendentes (Não)
+                    </button>
+                </div>
+
+                <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <button onclick="setViewMode('table')" id="btn-view-table" class="px-2.5 py-1 rounded-md text-xs font-bold bg-white text-slate-800 shadow-sm transition" title="Modo Tabela">
+                        <i class="fa-solid fa-table-cells"></i>
+                    </button>
+                    <button onclick="setViewMode('cards')" id="btn-view-cards" class="px-2.5 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-800 transition" title="Modo Cartões">
+                        <i class="fa-solid fa-grip"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Tabela Principal -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-800 text-slate-200 text-xs font-semibold tracking-wider uppercase border-b border-slate-700">
-                            <th class="py-3 px-4 w-1/4">Tutor</th>
-                            <th class="py-3 px-4 text-center w-36">Entrega Completa</th>
-                            <th class="py-3 px-4 w-36">Dia Entrega</th>
-                            <th class="py-3 px-2 text-center">Resposta 1</th>
-                            <th class="py-3 px-2 text-center">Resposta 2</th>
-                            <th class="py-3 px-2 text-center">Resposta 3</th>
-                            <th class="py-3 px-2 text-center">Resposta 4</th>
-                            <th class="py-3 px-2 text-center">Resposta 5</th>
-                            <th class="py-3 px-2 text-center w-16">Ações</th>
+        <!-- Tabela Espelhada -->
+        <div id="table-view-container" class="bg-white rounded-xl shadow-sm border border-slate-300 overflow-hidden mb-6">
+            <div class="overflow-x-auto max-h-[650px] overflow-y-auto">
+                <table class="w-full text-left border-collapse relative">
+                    <thead class="sticky top-0 z-20">
+                        <tr class="bg-[#0e435d] text-white text-xs font-bold uppercase tracking-wider divide-x divide-slate-600">
+                            <th class="py-3 px-4 min-w-[280px]">Tutor</th>
+                            <th class="py-3 px-4 text-center w-40">Entrega Completa</th>
+                            <th class="py-3 px-4 text-center w-36">Dia Entrega</th>
+                            <th class="py-3 px-2 text-center w-28">Resposta 1</th>
+                            <th class="py-3 px-2 text-center w-28">Resposta 2</th>
+                            <th class="py-3 px-2 text-center w-28">Resposta 3</th>
+                            <th class="py-3 px-2 text-center w-28">Resposta 4</th>
+                            <th class="py-3 px-2 text-center w-28">Resposta 5</th>
                         </tr>
                     </thead>
-                    <tbody id="tutors-table-body" class="divide-y divide-slate-200 text-sm">
-                        <!-- Conteúdo gerado via JS -->
+                    <tbody id="tutors-table-body" class="divide-y divide-slate-300 text-sm">
+                        <!-- Preenchido via JavaScript -->
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Estado Vazio -->
-            <div id="empty-state" class="hidden p-8 text-center text-slate-500">
-                <i class="fa-solid fa-folder-open text-4xl mb-2 text-slate-300"></i>
-                <p>Nenhum tutor encontrado com os filtros selecionados.</p>
-            </div>
         </div>
+
+        <!-- Visualização em Cartões -->
+        <div id="cards-view-container" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        </div>
+
+        <!-- Estado Vazio -->
+        <div id="empty-state" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+            <i class="fa-solid fa-folder-open text-5xl mb-3 text-slate-300"></i>
+            <h3 class="font-bold text-slate-700 text-lg">Nenhum tutor encontrado</h3>
+            <p class="text-xs text-slate-400 mt-1">Tente mudar o termo de busca ou o filtro selecionado.</p>
+        </div>
+
     </main>
 
-    <!-- Modal Adicionar Tutor -->
-    <div id="add-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-slate-800">Adicionar Novo Tutor</h3>
-                <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            
-            <form id="add-tutor-form" onsubmit="handleAddTutor(event)">
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo do Tutor</label>
-                    <input type="text" id="new-tutor-name" required placeholder="Ex: MARIA SILVA SANTOS" 
-                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-                <div class="mb-6">
-                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data da Entrega (Opcional)</label>
-                    <input type="date" id="new-tutor-date" 
-                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition shadow">
-                        Salvar Tutor
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script de Lógica e Dados -->
+    <!-- Script de Lógica Principal com a URL Fixa -->
     <script>
-        // Dados Iniciais extraídos da imagem fornecida
-        const initialTutors = [
-            { id: 1, name: "ADRIANA FELIX RODRIGUES", date: "2026-10-21", responses: [true, true, true, true, true] },
-            { id: 2, name: "ALINE DUARTE DA SILVA", date: "", responses: [false, false, false, false, false] },
-            { id: 3, name: "ALINE ZELLER BRANCHI", date: "", responses: [false, false, false, false, false] },
-            { id: 4, name: "ANDREA CRISTINA BORGES DE SOUSA", date: "", responses: [false, false, false, false, false] },
-            { id: 5, name: "ANDRESSA SILVEIRA MORAES", date: "", responses: [false, false, false, false, false] },
-            { id: 6, name: "ANGELA PATRICIA RODRIGUES DA SILVA", date: "", responses: [false, false, false, false, false] },
-            { id: 7, name: "BRUNA LIMA DA SILVA", date: "", responses: [false, false, false, false, false] },
-            { id: 8, name: "CAMILA GONCALVES VIEIRA", date: "", responses: [false, false, false, false, false] },
-            { id: 9, name: "CAROLINE DE BRITO LIMA LIRA", date: "", responses: [false, false, false, false, false] },
-            { id: 10, name: "CAROLINE DE PAULA BATISTA", date: "", responses: [false, false, false, false, false] },
-            { id: 11, name: "CASSIA VALERIA TAVARES DE SOUZA MARQUES", date: "", responses: [false, false, false, false, false] },
-            { id: 12, name: "CASSIO ANDRADE MACHADO", date: "", responses: [false, false, false, false, false] },
-            { id: 13, name: "CLAUDIA ROSANE COUTO SANTANNA ALMEIDA", date: "", responses: [false, false, false, false, false] },
-            { id: 14, name: "CLEBERSON VIEIRA DE ARAUJO", date: "", responses: [false, false, false, false, false] },
-            { id: 15, name: "CLEITON DOUGLAS BARROS SANTOS", date: "", responses: [false, false, false, false, false] }
-        ];
+        // URL da sua planilha já salva definitivamente no código
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQA4BPu8YqYsBwYR6ya2cI1vm2wK85Wyn77qM2savesdv8y9U_B6CQR6Z0sCjaWd7zMnwMan5W1UGT8/pub?gid=0&single=true&output=csv";
 
-        let tutors = [...initialTutors];
+        let tutors = [];
         let currentFilter = 'all';
+        let viewMode = 'table';
+        let autoRefreshTimer = null;
 
-        // Renderizar a tabela
-        function renderTable() {
-            const tbody = document.getElementById('tutors-table-body');
+        function parseBoolean(val) {
+            if (typeof val === 'boolean') return val;
+            if (!val) return false;
+            const normalized = String(val).trim().toUpperCase();
+            return ['VERDADEIRO', 'TRUE', 'SIM', '1', 'OK', 'V', '✓', 'X'].includes(normalized);
+        }
+
+        async function fetchSheetData() {
+            const syncIcon = document.getElementById('sync-icon');
+            const statusSignal = document.getElementById('status-signal-icon');
+            syncIcon.classList.add('fa-spin');
+
+            try {
+                const response = await fetch(sheetUrl, { cache: 'no-store' });
+                
+                if (!response.ok) throw new Error('Falha ao conectar à planilha');
+
+                const csvText = await response.text();
+
+                Papa.parse(csvText, {
+                    header: false,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        parseCSVRows(results.data);
+                        document.getElementById('live-indicator').classList.remove('hidden');
+                        document.getElementById('source-status').innerText = 'Google Sheets (Ao Vivo)';
+                        statusSignal.className = 'fa-solid fa-signal text-emerald-500';
+                        document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
+                    }
+                });
+            } catch (err) {
+                console.error('Erro de sincronização:', err);
+                document.getElementById('source-status').innerText = 'Erro na Conexão';
+                statusSignal.className = 'fa-solid fa-circle-exclamation text-rose-500';
+            } finally {
+                setTimeout(() => syncIcon.classList.remove('fa-spin'), 400);
+            }
+        }
+
+        function parseCSVRows(rows) {
+            if (!rows || rows.length < 2) return;
+
+            const parsedTutors = [];
+            
+            // Lê todas as linhas da planilha de forma dinâmica
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row[0]) continue; 
+
+                const name = String(row[0]).trim();
+                let date = row[2] ? String(row[2]).trim() : '';
+                
+                const responses = [
+                    parseBoolean(row[3]),
+                    parseBoolean(row[4]),
+                    parseBoolean(row[5]),
+                    parseBoolean(row[6]),
+                    parseBoolean(row[7])
+                ];
+
+                parsedTutors.push({
+                    id: i,
+                    name: name,
+                    date: date,
+                    responses: responses
+                });
+            }
+
+            if (parsedTutors.length > 0) {
+                tutors = parsedTutors;
+                renderData();
+            }
+        }
+
+        function renderData() {
             const searchValue = document.getElementById('search-input').value.toLowerCase();
-            tbody.innerHTML = '';
-
+            
             let filteredTutors = tutors.filter(tutor => {
                 const isComplete = tutor.responses.every(r => r === true);
                 const matchesSearch = tutor.name.toLowerCase().includes(searchValue);
@@ -254,25 +334,40 @@
 
             if (filteredTutors.length === 0) {
                 document.getElementById('empty-state').classList.remove('hidden');
+                document.getElementById('table-view-container').classList.add('hidden');
+                document.getElementById('cards-view-container').classList.add('hidden');
             } else {
                 document.getElementById('empty-state').classList.add('hidden');
+                if (viewMode === 'table') {
+                    document.getElementById('table-view-container').classList.remove('hidden');
+                    document.getElementById('cards-view-container').classList.add('hidden');
+                    renderTable(filteredTutors);
+                } else {
+                    document.getElementById('table-view-container').classList.add('hidden');
+                    document.getElementById('cards-view-container').classList.remove('hidden');
+                    renderCards(filteredTutors);
+                }
             }
 
-            filteredTutors.forEach((tutor) => {
+            updateStats();
+        }
+
+        function renderTable(dataList) {
+            const tbody = document.getElementById('tutors-table-body');
+            tbody.innerHTML = '';
+
+            dataList.forEach((tutor) => {
                 const isComplete = tutor.responses.every(r => r === true);
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
-
-                // Formatar Data para Exibição
-                let formattedDate = tutor.date;
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-300";
 
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-semibold text-slate-700">${tutor.name}</td>
+                    <td class="py-3 px-4 font-bold text-slate-800 border-r border-slate-200">${tutor.name}</td>
                     
-                    <td class="py-3 px-4 text-center">
-                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold w-20 shadow-sm transition-all duration-300 ${
+                    <td class="py-3 px-4 text-center border-r border-slate-200">
+                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black shadow-sm transition-all ${
                             isComplete 
-                            ? 'bg-emerald-600 text-white' 
+                            ? 'bg-emerald-700 text-white' 
                             : 'bg-rose-700 text-white'
                         }">
                             <i class="fa-solid ${isComplete ? 'fa-check' : 'fa-xmark'} mr-1.5"></i>
@@ -280,60 +375,59 @@
                         </span>
                     </td>
 
-                    <td class="py-3 px-4">
-                        <input type="date" value="${tutor.date}" 
-                               onchange="updateDate(${tutor.id}, this.value)" 
-                               class="bg-transparent border border-slate-300 focus:border-emerald-500 rounded px-2 py-1 text-xs text-slate-600 focus:outline-none">
+                    <td class="py-3 px-4 text-center text-xs font-mono text-slate-600 border-r border-slate-200">
+                        ${tutor.date || '-'}
                     </td>
 
-                    ${tutor.responses.map((resp, index) => `
-                        <td class="py-3 px-2 text-center transition-colors duration-200 ${resp ? 'cell-checked' : 'cell-unchecked'}">
-                            <input type="checkbox" 
-                                   ${resp ? 'checked' : ''} 
-                                   onchange="toggleResponse(${tutor.id}, ${index})"
-                                   class="checkbox-custom rounded">
+                    ${tutor.responses.map((resp) => `
+                        <td class="py-3 px-2 text-center border-r border-slate-200 transition-colors duration-150 ${resp ? 'cell-checked' : 'cell-unchecked'} font-black text-base">
+                            ${resp 
+                                ? '<i class="fa-solid fa-check text-emerald-800"></i>' 
+                                : '<i class="fa-regular fa-square text-rose-900 opacity-70"></i>'}
                         </td>
                     `).join('')}
-
-                    <td class="py-3 px-2 text-center">
-                        <button onclick="deleteTutor(${tutor.id})" class="text-slate-400 hover:text-rose-600 p-1 rounded transition" title="Excluir Tutor">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </td>
                 `;
 
                 tbody.appendChild(tr);
             });
-
-            updateStats();
         }
 
-        // Alternar marcação da caixa de seleção
-        function toggleResponse(tutorId, responseIndex) {
-            const tutor = tutors.find(t => t.id === tutorId);
-            if (tutor) {
-                tutor.responses[responseIndex] = !tutor.responses[responseIndex];
-                
-                // Se completou todas e não tinha data, preenche automaticamente com a data de hoje
-                const allChecked = tutor.responses.every(r => r === true);
-                if (allChecked && !tutor.date) {
-                    const today = new Date().toISOString().split('T')[0];
-                    tutor.date = today;
-                }
-                
-                renderTable();
-            }
+        function renderCards(dataList) {
+            const container = document.getElementById('cards-view-container');
+            container.innerHTML = '';
+
+            dataList.forEach((tutor) => {
+                const isComplete = tutor.responses.every(r => r === true);
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-xl border ${isComplete ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200'} p-4 shadow-sm flex flex-col justify-between`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-3">
+                            <h4 class="font-bold text-slate-800 text-sm leading-snug">${tutor.name}</h4>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                                isComplete ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                            }">
+                                ${isComplete ? 'Sim' : 'Não'}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3"><i class="fa-regular fa-calendar mr-1"></i> Data: <strong class="text-slate-600">${tutor.date || 'Pendente'}</strong></p>
+                    </div>
+
+                    <div class="grid grid-cols-5 gap-1.5 pt-2 border-t border-slate-100">
+                        ${tutor.responses.map((resp, idx) => `
+                            <div class="flex flex-col items-center p-1.5 rounded ${resp ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'} text-center">
+                                <span class="text-[9px] font-bold opacity-75">R${idx + 1}</span>
+                                <i class="fa-solid ${resp ? 'fa-check' : 'fa-xmark'} text-xs mt-0.5"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
         }
 
-        // Atualizar Data
-        function updateDate(tutorId, newDate) {
-            const tutor = tutors.find(t => t.id === tutorId);
-            if (tutor) {
-                tutor.date = newDate;
-            }
-        }
-
-        // Atualizar Estatísticas
         function updateStats() {
             const total = tutors.length;
             const completed = tutors.filter(t => t.responses.every(r => r === true)).length;
@@ -347,85 +441,49 @@
             document.getElementById('progress-bar').style.width = `${percent}%`;
         }
 
-        // Filtros
         function setFilter(filter) {
             currentFilter = filter;
-            
-            // Estilizar botões
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+                btn.className = "filter-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition";
             });
 
             const activeBtn = document.getElementById(`btn-filter-${filter}`);
             if (activeBtn) {
-                activeBtn.className = "filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 text-white transition";
+                activeBtn.className = "filter-btn px-3 py-1 rounded-md text-xs font-bold bg-slate-900 text-white shadow-sm transition";
             }
-
-            renderTable();
+            renderData();
         }
 
-        function filterData() {
-            renderTable();
+        function setViewMode(mode) {
+            viewMode = mode;
+            const tableBtn = document.getElementById('btn-view-table');
+            const cardsBtn = document.getElementById('btn-view-cards');
+
+            if (mode === 'table') {
+                tableBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold bg-white text-slate-800 shadow-sm transition";
+                cardsBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-800 transition";
+            } else {
+                cardsBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold bg-white text-slate-800 shadow-sm transition";
+                tableBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-800 transition";
+            }
+            renderData();
         }
 
-        // Modal
-        function openAddModal() {
-            document.getElementById('add-modal').classList.remove('hidden');
-            document.getElementById('add-modal').classList.add('flex');
+        function changeAutoRefreshInterval() {
+            const seconds = parseInt(document.getElementById('auto-refresh-select').value);
+            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+            if (seconds > 0) {
+                autoRefreshTimer = setInterval(() => {
+                    fetchSheetData();
+                }, seconds * 1000);
+            }
         }
 
-        function closeAddModal() {
-            document.getElementById('add-modal').classList.add('hidden');
-            document.getElementById('add-modal').classList.remove('flex');
-            document.getElementById('add-tutor-form').reset();
-        }
-
-        function handleAddTutor(e) {
-            e.preventDefault();
-            const nameInput = document.getElementById('new-tutor-name');
-            const dateInput = document.getElementById('new-tutor-date');
-
-            if (nameInput.value.trim() === '') return;
-
-            const newTutor = {
-                id: Date.now(),
-                name: nameInput.value.trim().toUpperCase(),
-                date: dateInput.value,
-                responses: [false, false, false, false, false]
-            };
-
-            tutors.push(newTutor);
-            closeAddModal();
-            renderTable();
-        }
-
-        function deleteTutor(id) {
-            tutors = tutors.filter(t => t.id !== id);
-            renderTable();
-        }
-
-        // Exportar para CSV
-        function exportToCSV() {
-            let csv = 'Tutor;Entrega Completa;Dia Entrega;Resposta 1;Resposta 2;Resposta 3;Resposta 4;Resposta 5\n';
-            
-            tutors.forEach(t => {
-                const complete = t.responses.every(r => r === true) ? 'Sim' : 'Não';
-                const resps = t.responses.map(r => r ? 'OK' : 'Pendente').join(';');
-                csv += `"${t.name}";"${complete}";"${t.date || ''}";${resps}\n`;
-            });
-
-            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute('download', 'EntregaTutoresAtividadeTrilha3.csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Inicialização
+        // Executa imediatamente ao carregar a página
         window.onload = function() {
-            renderTable();
+            fetchSheetData();
+            changeAutoRefreshInterval();
         };
     </script>
 </body>
