@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Entrega dos Tutores</title>
+    <title>Entrega dos Tutores</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -35,33 +35,35 @@
             background-color: #f87171 !important;
             color: #7f1d1d;
         }
+        .date-pending-partial {
+            background-color: #fef08a !important; /* Amarelo claro */
+            color: #854d0e !important;
+            font-weight: bold;
+        }
 
-        /* Configuração de Impressão: Dividido em 2 páginas (35 tutores por página) */
+        /* Oculta o card de impressão na tela normal */
+        #print-card-container {
+            display: none;
+        }
+
+        /* Configuração exclusiva para a Impressão A4 (2 páginas com 35 tutores cada) */
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 10mm;
-            }
-            .no-print {
-                display: none !important;
+                margin: 8mm;
             }
             body {
                 background: white !important;
                 color: black !important;
             }
-            .print-full-width {
-                max-width: 100% !important;
+            .no-print {
+                display: none !important;
+            }
+            #print-card-container {
+                display: block !important;
                 width: 100% !important;
-                padding: 0 !important;
-                margin: 0 !important;
             }
-            #table-view-container {
-                max-height: none !important;
-                border: none !important;
-                box-shadow: none !important;
-            }
-            /* Insere quebra de página exata após a linha 35 */
-            tr:nth-child(35) {
+            .print-tr:nth-child(35) {
                 page-break-after: always !important;
                 break-after: page !important;
             }
@@ -70,7 +72,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
 
-    <!-- Top Navigation Bar -->
+    <!-- Top Navigation Bar (Visível apenas na tela) -->
     <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-30 no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
@@ -80,29 +82,29 @@
                 <div>
                     <h1 class="text-lg font-extrabold leading-tight flex items-center gap-2">
                         Entrega Tutores Atividade Trilha 3
-                        <span id="live-indicator" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            
                     </h1>
-                    <p class="text-xs text-slate-400">Acompanhamento da entrega das atividades dos tutores , atualizado dia 22/10/2026 às 18:39 .</p>
+                    <p class="text-xs text-slate-400">Acompanhamento da entrega das atividades dos tutores.</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2.5">
-               
+                <!-- Botão Público para Baixar a Planilha Inteira em Excel -->
+                <a href="https://docs.google.com/spreadsheets/d/1viG2qnnMn2Mf1MWiut86mP_bad1DbS0TRS0EpTDuA2c/export?format=xlsx" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-md">
+                    <i class="fa-solid fa-file-excel"></i> Baixar Planilha
+                </a>
+
+                <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-white text-xs font-semibold rounded-lg transition shadow-md">
+                    <i class="fa-solid fa-print"></i> Imprimir Relatório
+                </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full print-full-width">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full no-print">
         
-        <!-- Barra de Status Oculta Conforme Solicitado -->
-        <div class="hidden">
-            <span id="last-update-time"></span>
-            <span id="source-status"></span>
-        </div>
-
-        <!-- Dashboard de Métricas -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 no-print">
+        <!-- Dashboard de Métricas da Tela -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
                     <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total de Tutores</p>
@@ -144,8 +146,8 @@
             </div>
         </div>
 
-        <!-- Filtros e Busca -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center no-print">
+        <!-- Filtros e Busca da Tela -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
             <div class="relative w-full md:w-80">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm"></i>
                 <input type="text" id="search-input" onkeyup="renderData()" placeholder="Buscar tutor pelo nome..." 
@@ -177,7 +179,7 @@
             </div>
         </div>
 
-        <!-- Tabela Espelhada -->
+        <!-- Tabela Normal da Tela -->
         <div id="table-view-container" class="bg-white rounded-xl shadow-sm border border-slate-300 overflow-hidden mb-6">
             <div class="overflow-x-auto max-h-[650px] overflow-y-auto">
                 <table class="w-full text-left border-collapse relative">
@@ -200,7 +202,7 @@
             </div>
         </div>
 
-        <!-- Visualização em Cartões -->
+        <!-- Visualização em Cartões (Tela) -->
         <div id="cards-view-container" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         </div>
 
@@ -213,7 +215,32 @@
 
     </main>
 
-    <!-- Script de Sincronização Automática (3s) e Tratamento de Dados -->
+    <!-- CARD EXCLUSIVO PARA IMPRESSÃO A4 -->
+    <div id="print-card-container">
+        <div style="font-family: 'Inter', sans-serif; width: 100%;">
+            <h2 style="font-size: 14px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; color: #142834;">Entrega Tutores Atividade Trilha 3</h2>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <thead>
+                    <tr style="background-color: #142834; color: white; text-align: center;">
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 30px;">#</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; text-align: left;">TUTOR</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 70px;">ENTREGA</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 70px;">DATA</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 1</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 2</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 3</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 4</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 5</th>
+                    </tr>
+                </thead>
+                <tbody id="print-table-body">
+                    <!-- Preenchido via JavaScript para impressão -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Script com Validação de Data Amarela (1 a 4 respostas) -->
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycbyBWFqjo6EttvRym-jtEU0MbuTrYjmMoJYFH0O2bgk_KqsVZizk5A9c7Jm0ogbHo96F/exec";
 
@@ -316,20 +343,17 @@
             if (filteredTutors.length === 0) {
                 document.getElementById('empty-state').classList.remove('hidden');
                 document.getElementById('table-view-container').classList.add('hidden');
-                document.getElementById('cards-view-container').classList.add('hidden');
             } else {
                 document.getElementById('empty-state').classList.add('hidden');
+                document.getElementById('table-view-container').classList.remove('hidden');
                 if (viewMode === 'table') {
-                    document.getElementById('table-view-container').classList.remove('hidden');
-                    document.getElementById('cards-view-container').classList.add('hidden');
                     renderTable(filteredTutors);
                 } else {
-                    document.getElementById('table-view-container').classList.add('hidden');
-                    document.getElementById('cards-view-container').classList.remove('hidden');
                     renderCards(filteredTutors);
                 }
             }
 
+            renderPrintTable(tutors);
             updateStats();
         }
 
@@ -339,6 +363,11 @@
 
             dataList.forEach((tutor) => {
                 const isComplete = tutor.responses.every(r => r === true);
+                const markedCount = tutor.responses.filter(r => r === true).length;
+                
+                const isPartial = !isComplete && markedCount > 0 && markedCount < 5;
+                const dateClass = isPartial ? 'date-pending-partial' : 'text-slate-600';
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition border-b border-slate-300";
 
@@ -356,7 +385,7 @@
                         </span>
                     </td>
 
-                    <td class="py-3 px-4 text-center text-xs font-mono text-slate-600 border-r border-slate-200">
+                    <td class="py-3 px-4 text-center text-xs font-mono border-r border-slate-200 ${dateClass}">
                         ${tutor.date || '-'}
                     </td>
 
@@ -370,6 +399,36 @@
                 `;
 
                 tbody.appendChild(tr);
+            });
+        }
+
+        function renderPrintTable(dataList) {
+            const printTbody = document.getElementById('print-table-body');
+            printTbody.innerHTML = '';
+
+            dataList.forEach((tutor, idx) => {
+                const isComplete = tutor.responses.every(r => r === true);
+                const markedCount = tutor.responses.filter(r => r === true).length;
+                const isPartial = !isComplete && markedCount > 0 && markedCount < 5;
+                
+                const dateBg = isPartial ? 'background-color: #fef08a; color: #854d0e; font-weight: bold;' : '';
+
+                const tr = document.createElement('tr');
+                tr.className = "print-tr";
+                tr.style.borderBottom = "1px solid #ddd";
+
+                tr.innerHTML = `
+                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; background-color: #f9f9f9;">${idx + 1}</td>
+                    <td style="padding: 5px 8px; border: 1px solid #ddd; font-weight: bold;">${tutor.name}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: ${isComplete ? '#065f46' : '#7f1d1d'};">${isComplete ? 'Sim' : 'Não'}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-family: monospace; ${dateBg}">${tutor.date || '-'}</td>
+                    ${tutor.responses.map(resp => `
+                        <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: ${resp ? '#1d4ed8' : '#7c2d12'};">
+                            ${resp ? 'Sim' : 'Não'}
+                        </td>
+                    `).join('')}
+                `;
+                printTbody.appendChild(tr);
             });
         }
 
@@ -443,14 +502,17 @@
             if (mode === 'table') {
                 tableBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold bg-white text-slate-800 shadow-sm transition";
                 cardsBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-800 transition";
+                document.getElementById('table-view-container').classList.remove('hidden');
+                document.getElementById('cards-view-container').classList.add('hidden');
             } else {
                 cardsBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold bg-white text-slate-800 shadow-sm transition";
                 tableBtn.className = "px-2.5 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-800 transition";
+                document.getElementById('table-view-container').classList.add('hidden');
+                document.getElementById('cards-view-container').classList.remove('hidden');
             }
             renderData();
         }
 
-        // Inicializa e mantém a verificação oculta a cada 3 segundos em segundo plano
         window.onload = function() {
             fetchSheetData();
             setInterval(() => {
