@@ -83,7 +83,7 @@
                     <h1 class="text-lg font-extrabold leading-tight flex items-center gap-2">
                         Entrega Tutores Atividade Trilha 3
                     </h1>
-                    <p class="text-xs text-slate-400">Acompanhamento da entrega das atividades dos tutores ,atualizado 22/10/2026 até as 19:59.</p>
+                    <p class="text-xs text-slate-400">Acompanhamento da entrega das atividades dos tutores, atualizado em <span id="last-update-time">22/10/2026 às 19:59</span>.</p>
                 </div>
             </div>
             
@@ -103,11 +103,11 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full no-print">
         
-        <!-- Dashboard de Métricas da Tela -->
+        <!-- Dashboard de Métricas da Tela (4 Cards padronizados somando 70) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total de Tutores</p>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Total de Tutores</p>
                     <h2 id="stat-total" class="text-2xl font-black text-slate-800 mt-1">0</h2>
                 </div>
                 <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -117,7 +117,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Entregas Concluídas (Sim)</p>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Concluídas (5 respostas)</p>
                     <h2 id="stat-completed" class="text-2xl font-black text-emerald-600 mt-1">0</h2>
                 </div>
                 <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
@@ -127,21 +127,21 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pendentes (Não)</p>
-                    <h2 id="stat-pending" class="text-2xl font-black text-rose-600 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Em Processo (de 1 a 4 respostas)</p>
+                    <h2 id="stat-partial" class="text-2xl font-black text-amber-600 mt-1">0</h2>
                 </div>
-                <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
-                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                    <i class="fa-solid fa-clock-rotate-left text-xl"></i>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col justify-center">
-                <div class="flex justify-between items-center mb-1.5">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxa de Conclusão</span>
-                    <span id="stat-percent" class="text-sm font-extrabold text-slate-800">0%</span>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Sem Nenhuma Entrega</p>
+                    <h2 id="stat-none" class="text-2xl font-black text-rose-600 mt-1">0</h2>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200">
-                    <div id="progress-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
                 </div>
             </div>
         </div>
@@ -155,16 +155,19 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto">
-                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 flex-wrap">
                     <span class="text-xs font-semibold text-slate-500 px-2">Filtrar:</span>
-                    <button onclick="setFilter('all')" id="btn-filter-all" class="filter-btn px-3 py-1 rounded-md text-xs font-bold bg-slate-900 text-white shadow-sm transition">
+                    <button onclick="setFilter('all')" id="btn-filter-all" class="filter-btn px-2.5 py-1 rounded-md text-xs font-bold bg-slate-900 text-white shadow-sm transition">
                         Todos
                     </button>
-                    <button onclick="setFilter('completed')" id="btn-filter-completed" class="filter-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
-                        Entregues (Sim)
+                    <button onclick="setFilter('completed')" id="btn-filter-completed" class="filter-btn px-2.5 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
+                        Concluídos
                     </button>
-                    <button onclick="setFilter('pending')" id="btn-filter-pending" class="filter-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
-                        Pendentes (Não)
+                    <button onclick="setFilter('partial')" id="btn-filter-partial" class="filter-btn px-2.5 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
+                        Em Processo
+                    </button>
+                    <button onclick="setFilter('none')" id="btn-filter-none" class="filter-btn px-2.5 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition">
+                        Não Entregou
                     </button>
                 </div>
 
@@ -186,7 +189,7 @@
                     <thead class="sticky top-0 z-20">
                         <tr class="bg-[#0e435d] text-white text-xs font-bold uppercase tracking-wider divide-x divide-slate-600">
                             <th class="py-3 px-4 min-w-[280px]">Tutor</th>
-                            <th class="py-3 px-4 text-center w-40">Entrega Completa</th>
+                            <th class="py-3 px-4 text-center w-40">Status / Entrega</th>
                             <th class="py-3 px-4 text-center w-36">Dia Entrega</th>
                             <th class="py-3 px-2 text-center w-28">Resposta 1</th>
                             <th class="py-3 px-2 text-center w-28">Resposta 2</th>
@@ -224,7 +227,7 @@
                     <tr style="background-color: #142834; color: white; text-align: center;">
                         <th style="padding: 6px; border: 1px solid #ccc; width: 30px;">#</th>
                         <th style="padding: 6px; border: 1px solid #ccc; text-align: left;">TUTOR</th>
-                        <th style="padding: 6px; border: 1px solid #ccc; width: 70px;">ENTREGA</th>
+                        <th style="padding: 6px; border: 1px solid #ccc; width: 95px;">STATUS</th>
                         <th style="padding: 6px; border: 1px solid #ccc; width: 70px;">DATA</th>
                         <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 1</th>
                         <th style="padding: 6px; border: 1px solid #ccc; width: 55px;">R. 2</th>
@@ -240,7 +243,7 @@
         </div>
     </div>
 
-    <!-- Script com Validação de Data Amarela (1 a 4 respostas) -->
+    <!-- Script com Lógica Atualizada ("Não Entregou") -->
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycbyBWFqjo6EttvRym-jtEU0MbuTrYjmMoJYFH0O2bgk_KqsVZizk5A9c7Jm0ogbHo96F/exec";
 
@@ -331,12 +334,16 @@
             
             let filteredTutors = tutors.filter(tutor => {
                 const isComplete = tutor.responses.every(r => r === true);
+                const markedCount = tutor.responses.filter(r => r === true).length;
+                const isPartial = !isComplete && markedCount > 0 && markedCount < 5;
+                const isNone = markedCount === 0;
+
                 const matchesSearch = tutor.name.toLowerCase().includes(searchValue);
-                
                 if (!matchesSearch) return false;
 
                 if (currentFilter === 'completed') return isComplete;
-                if (currentFilter === 'pending') return !isComplete;
+                if (currentFilter === 'partial') return isPartial;
+                if (currentFilter === 'none') return isNone;
                 return true;
             });
 
@@ -365,6 +372,20 @@
                 const isComplete = tutor.responses.every(r => r === true);
                 const markedCount = tutor.responses.filter(r => r === true).length;
                 
+                let statusLabel = 'Não Entregou';
+                let statusClass = 'bg-rose-700 text-white';
+                let iconClass = 'fa-xmark';
+
+                if (isComplete) {
+                    statusLabel = 'Sim';
+                    statusClass = 'bg-emerald-700 text-white';
+                    iconClass = 'fa-check';
+                } else if (markedCount > 0 && markedCount < 5) {
+                    statusLabel = 'Em Processo';
+                    statusClass = 'bg-amber-600 text-white';
+                    iconClass = 'fa-clock';
+                }
+
                 const isPartial = !isComplete && markedCount > 0 && markedCount < 5;
                 const dateClass = isPartial ? 'date-pending-partial' : 'text-slate-600';
 
@@ -375,13 +396,9 @@
                     <td class="py-3 px-4 font-bold text-slate-800 border-r border-slate-200">${tutor.name}</td>
                     
                     <td class="py-3 px-4 text-center border-r border-slate-200">
-                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black shadow-sm transition-all ${
-                            isComplete 
-                            ? 'bg-emerald-700 text-white' 
-                            : 'bg-rose-700 text-white'
-                        }">
-                            <i class="fa-solid ${isComplete ? 'fa-check' : 'fa-xmark'} mr-1.5"></i>
-                            ${isComplete ? 'Sim' : 'Não'}
+                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black shadow-sm transition-all ${statusClass}">
+                            <i class="fa-solid ${iconClass} mr-1.5"></i>
+                            ${statusLabel}
                         </span>
                     </td>
 
@@ -409,8 +426,19 @@
             dataList.forEach((tutor, idx) => {
                 const isComplete = tutor.responses.every(r => r === true);
                 const markedCount = tutor.responses.filter(r => r === true).length;
-                const isPartial = !isComplete && markedCount > 0 && markedCount < 5;
                 
+                let statusLabel = 'Não Entregou';
+                let statusColor = '#7f1d1d';
+
+                if (isComplete) {
+                    statusLabel = 'Sim';
+                    statusColor = '#065f46';
+                } else if (markedCount > 0 && markedCount < 5) {
+                    statusLabel = 'Em Processo';
+                    statusColor = '#b45309';
+                }
+
+                const isPartial = !isComplete && markedCount > 0 && markedCount < 5;
                 const dateBg = isPartial ? 'background-color: #fef08a; color: #854d0e; font-weight: bold;' : '';
 
                 const tr = document.createElement('tr');
@@ -420,7 +448,7 @@
                 tr.innerHTML = `
                     <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; background-color: #f9f9f9;">${idx + 1}</td>
                     <td style="padding: 5px 8px; border: 1px solid #ddd; font-weight: bold;">${tutor.name}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: ${isComplete ? '#065f46' : '#7f1d1d'};">${isComplete ? 'Sim' : 'Não'}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: ${statusColor};">${statusLabel}</td>
                     <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-family: monospace; ${dateBg}">${tutor.date || '-'}</td>
                     ${tutor.responses.map(resp => `
                         <td style="padding: 5px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: ${resp ? '#1d4ed8' : '#7c2d12'};">
@@ -438,6 +466,18 @@
 
             dataList.forEach((tutor) => {
                 const isComplete = tutor.responses.every(r => r === true);
+                const markedCount = tutor.responses.filter(r => r === true).length;
+                
+                let statusLabel = 'Não Entregou';
+                let badgeColor = 'bg-rose-600 text-white';
+                if (isComplete) {
+                    statusLabel = 'Concluído';
+                    badgeColor = 'bg-emerald-600 text-white';
+                } else if (markedCount > 0 && markedCount < 5) {
+                    statusLabel = 'Em Processo';
+                    badgeColor = 'bg-amber-600 text-white';
+                }
+
                 const card = document.createElement('div');
                 card.className = `bg-white rounded-xl border ${isComplete ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200'} p-4 shadow-sm flex flex-col justify-between`;
 
@@ -445,10 +485,8 @@
                     <div>
                         <div class="flex justify-between items-start gap-2 mb-3">
                             <h4 class="font-bold text-slate-800 text-sm leading-snug">${tutor.name}</h4>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                                isComplete ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
-                            }">
-                                ${isComplete ? 'Sim' : 'Não'}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold ${badgeColor}">
+                                ${statusLabel}
                             </span>
                         </div>
                         <p class="text-xs text-slate-400 mb-3"><i class="fa-regular fa-calendar mr-1"></i> Data: <strong class="text-slate-600">${tutor.date || 'Pendente'}</strong></p>
@@ -471,25 +509,27 @@
         function updateStats() {
             const total = tutors.length;
             const completed = tutors.filter(t => t.responses.every(r => r === true)).length;
-            const pending = total - completed;
-            const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+            const partial = tutors.filter(t => {
+                const count = t.responses.filter(r => r === true).length;
+                return !t.responses.every(r => r === true) && count > 0 && count < 5;
+            }).length;
+            const none = tutors.filter(t => t.responses.filter(r => r === true).length === 0).length;
 
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-completed').innerText = completed;
-            document.getElementById('stat-pending').innerText = pending;
-            document.getElementById('stat-percent').innerText = `${percent}%`;
-            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('stat-partial').innerText = partial;
+            document.getElementById('stat-none').innerText = none;
         }
 
         function setFilter(filter) {
             currentFilter = filter;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn px-3 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition";
+                btn.className = "filter-btn px-2.5 py-1 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-200 transition";
             });
 
             const activeBtn = document.getElementById(`btn-filter-${filter}`);
             if (activeBtn) {
-                activeBtn.className = "filter-btn px-3 py-1 rounded-md text-xs font-bold bg-slate-900 text-white shadow-sm transition";
+                activeBtn.className = "filter-btn px-2.5 py-1 rounded-md text-xs font-bold bg-slate-900 text-white shadow-sm transition";
             }
             renderData();
         }
