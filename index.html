@@ -103,7 +103,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full no-print">
         
-        <!-- Dashboard de Métricas da Tela (4 Cards padronizados somando 70) -->
+        <!-- Dashboard de Métricas da Tela (4 Cards padronizados com subtítulos em bloco) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
@@ -117,8 +117,9 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-500 tracking-wider">Concluídas (5 respostas)</p>
-                    <h2 id="stat-completed" class="text-2xl font-black text-emerald-600 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Concluídas</p>
+                    <p class="text-[11px] text-slate-400 font-medium leading-tight mb-1">(5 envios de Relatos de Experiência)</p>
+                    <h2 id="stat-completed" class="text-2xl font-black text-emerald-600">0</h2>
                 </div>
                 <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                     <i class="fa-solid fa-circle-check text-xl"></i>
@@ -127,8 +128,9 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-500 tracking-wider">Em Processo (de 1 a 4 respostas)</p>
-                    <h2 id="stat-partial" class="text-2xl font-black text-amber-600 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Em Processo</p>
+                    <p class="text-[11px] text-slate-400 font-medium leading-tight mb-1">(de 1 a 4 envios de Relato de Experiência)</p>
+                    <h2 id="stat-partial" class="text-2xl font-black text-amber-600">0</h2>
                 </div>
                 <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
                     <i class="fa-solid fa-clock-rotate-left text-xl"></i>
@@ -137,8 +139,9 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-500 tracking-wider">Sem Nenhuma Entrega</p>
-                    <h2 id="stat-none" class="text-2xl font-black text-rose-600 mt-1">0</h2>
+                    <p class="text-xs font-bold text-slate-500 tracking-wider">Não Entregou</p>
+                    <p class="text-[11px] text-slate-400 font-medium leading-tight mb-1">(Nenhum envio registrado)</p>
+                    <h2 id="stat-none" class="text-2xl font-black text-rose-600">0</h2>
                 </div>
                 <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
                     <i class="fa-solid fa-circle-xmark text-xl"></i>
@@ -243,7 +246,7 @@
         </div>
     </div>
 
-    <!-- Script com Lógica Atualizada ("Não Entregou") -->
+    <!-- Script com Lógica Atualizada -->
     <script>
         const apiUrl = "https://script.google.com/macros/s/AKfycbyBWFqjo6EttvRym-jtEU0MbuTrYjmMoJYFH0O2bgk_KqsVZizk5A9c7Jm0ogbHo96F/exec";
 
